@@ -1,0 +1,32 @@
+{
+  "name": "receipt-recognition",
+  "version": "0.0.1",
+  "description": "Photograph receipts with a telegram bot and upload products' data to database",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PortoRAF/receipt-recognition.git"
+  },
+  "author": "Renato Porto",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/PortoRAF/receipt-recognition/issues"
+  },
+  "homepage": "https://github.com/PortoRAF/receipt-recognition#readme",
+  "dependencies": {
+    "@google-cloud/vision": "^1.11.0",
+    "express": "^4.17.1",
+    "jimp": "^0.10.3",
+    "node-telegram-bot-api": "^0.40.0",
+    "qrcode-reader": "^1.0.4"
+  },
+  "devDependencies": {
+    "dotenv": "^8.2.0",
+    "nodemon": "^2.0.3"
+  }
+}
