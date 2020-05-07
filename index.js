@@ -1,3 +1,4 @@
+const fs = require('fs')
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, "./config/.env") });
 const Jimp = require("jimp");
@@ -6,6 +7,8 @@ const Vision = require("@google-cloud/vision");
 
 const client = new Vision.ImageAnnotatorClient();
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
+
+const localImage = "./image.jpg"
 
 // bot.onText(/\/start/, (msg) => {
 //   bot.sendMessage(msg.chat.id, "Adicionar recibo?", {
@@ -30,8 +33,8 @@ const downloadImage = async (fileURI) => {
     url: fileURI
   })
     .then(image => {
-      image.write('sample.jpg')
-      imgToText('./sample.jpg')
+      image.write(localImage)
+      imgToText(localImage)
     })
     .catch(error => {
       console.log(error)
@@ -41,25 +44,39 @@ const downloadImage = async (fileURI) => {
 const imgToText = async (fileName) => {
   /* GOOGLE VISION API */
   console.log('sending image to recognize')
+  client.textDetection(fileName)
+    .then(response => {
+      const [result] = response
+      const detections = result.textAnnotations[0];
+      parseData(detections.description)
+      fs.unlink(localImage, err => {
+        if (err) throw err
+      })
+    })
+    .catch(err => {
+      console.log(err)
+    })
+}
 
-  const [result] = await client.textDetection(fileName)
-  const detections = result.textAnnotations[0];
-  console.log(detections)
-
-  var array = detections.description.split(/\r?\n/)
-  array = array.filter(a => a.length > 13)
-  array = array.map(product => {
+const parseData = (detectedText) => {
+  const formatData = (product) => {
     return product = {
       name: product.substring(13, 28).trim(),
       quantity: parseInt(product.substring(29, 34).trim().replace(',', '.')),
       price: parseFloat(product.slice(-5).trim().replace(',', '.'))
     }
-  })
+  }
 
-  const total = array.reduce((acc, curr) => {
+  const parsedText = detectedText
+    .split(/\r?\n/)
+    .filter(a => a.length > 13)
+    .map(product => formatData(product))
+
+  const total = parsedText.reduce((acc, curr) => {
     return (curr.price * curr.quantity) + acc
   }, 0)
-  console.log(array);
+
+  console.log(parsedText);
   console.log(`Total: ${total.toFixed(2)}`)
 }
 
