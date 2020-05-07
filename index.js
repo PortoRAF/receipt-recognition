@@ -1,12 +1,11 @@
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, "./config/.env") });
-// const Jimp = require("jimp");
-// const QRCode = require("qrcode-reader");
-// const express = require("express");
-// const TelegramBot = require("node-telegram-bot-api");
+const Jimp = require("jimp");
+const TelegramBot = require("node-telegram-bot-api");
 const Vision = require("@google-cloud/vision");
 
-// const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
+const client = new Vision.ImageAnnotatorClient();
+const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
 
 // bot.onText(/\/start/, (msg) => {
 //   bot.sendMessage(msg.chat.id, "Adicionar recibo?", {
@@ -16,34 +15,36 @@ const Vision = require("@google-cloud/vision");
 //   });
 // });
 
-// bot.on("message", (msg) => {
-//   console.log('message received')
-//   if (msg.photo) {
-//     console.log('message is photo')
-//     bot.getFileLink(msg.photo[2].file_id).then((fileURI) => {
-//       console.log(`photo uri ${fileURI}`)
-//       imgToText(fileURI)
-//       /* READ QR CODE */
-//       // Jimp.read(fileURI).then((image) => {
-//       //   const qr = new QRCode();
-//       //   qr.callback = (error, result) => {
-//       //     if (error) {
-//       //       return console.log("error", error);
-//       //     }
-//       //     console.log(result.result); // QRCode url is stored here
-//       //   };
-//       //   qr.decode(image.bitmap);
-//       // });
-//     })
-//   }
-// });
+bot.on("message", (msg) => {
+  console.log('message received')
+  if (msg.photo) {
+    console.log('message is photo')
+    bot.getFileLink(msg.photo[2].file_id).then((fileURI) => {
+      downloadImage(fileURI)
+    })
+  }
+});
+
+const downloadImage = async (fileURI) => {
+  Jimp.read({
+    url: fileURI
+  })
+    .then(image => {
+      image.write('sample.jpg')
+      imgToText('./sample.jpg')
+    })
+    .catch(error => {
+      console.log(error)
+    })
+}
 
 const imgToText = async (fileName) => {
   /* GOOGLE VISION API */
-  const client = new Vision.ImageAnnotatorClient();
+  console.log('sending image to recognize')
 
-  const [result] = await client.textDetection(fileName);
+  const [result] = await client.textDetection(fileName)
   const detections = result.textAnnotations[0];
+  console.log(detections)
 
   var array = detections.description.split(/\r?\n/)
   array = array.filter(a => a.length > 13)
@@ -56,23 +57,10 @@ const imgToText = async (fileName) => {
   })
 
   const total = array.reduce((acc, curr) => {
-    return curr.price + acc
+    return (curr.price * curr.quantity) + acc
   }, 0)
   console.log(array);
   console.log(`Total: ${total.toFixed(2)}`)
 }
 
-imgToText('./img/sample-crop.jpg')
-
-/* EXPRESS SERVER */
-// const app = express();
-
-// app.get("/", async (req, res) => {
-//   // const detections = await quickstart();
-//   // console.log(detections[0].description);
-//   res.send("I'm back");
-// });
-
-// app.listen(process.env.PORT, () => {
-//   console.log(`Server running on port ${process.env.PORT}`);
-// });
+// imgToText('./sample.jpg')
